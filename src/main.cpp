@@ -4,41 +4,23 @@
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_traits.h>
 #include <CGAL/AABB_triangle_primitive.h>
-
-using namespace std;
-using namespace CGAL;
-
+#include <ModelLoader/Loader.h>
 typedef Simple_cartesian<double> K;
-typedef K::FT FT;
-typedef K::Ray_3 Ray;
-typedef K::Line_3 Line;
+typedef K::Triangle_3 Triangle;
+
+typedef CGAL::Simple_cartesian<double> K;
 typedef K::Point_3 Point;
 typedef K::Triangle_3 Triangle;
 typedef std::list<Triangle>::iterator Iterator;
-typedef AABB_triangle_primitive<K, Iterator> Primitive;
-typedef AABB_traits<K, Primitive> AABB_triangle_traits;
-typedef AABB_tree<AABB_triangle_traits> Tree;
+typedef CGAL::AABB_triangle_primitive<K, Iterator> Primitive;
+typedef CGAL::AABB_traits<K, Primitive> AABB_triangle_traits;
+typedef CGAL::AABB_tree<AABB_triangle_traits> Tree;
+
+using namespace std;
 
 int main( int argc, char** argv ) {
-    Point a(1.0, 0.0, 0.0);
-    Point b(0.0, 1.0, 0.0);
-    Point c(0.0, 0.0, 1.0);
-    Point d(0.0, 0.0, 0.0);
-    std::list<Triangle> triangles;
-    triangles.push_back(Triangle(a,b,c));
-    triangles.push_back(Triangle(a,b,d));
-    triangles.push_back(Triangle(a,d,c));
-    // constructs AABB tree
-    Tree tree(triangles.begin(),triangles.end());
-    // counts #intersections
-    Ray ray_query(a,b);
-    std::cout << tree.number_of_intersected_primitives(ray_query)
-              << " intersections(s) with ray query" << std::endl;
-    // compute closest point and squared distance
-    Point point_query(2.0, 2.0, 2.0);
-    Point closest_point = tree.closest_point(point_query);
-    std::cerr << "closest point is: " << closest_point << std::endl;
-    FT sqd = tree.squared_distance(point_query);
-    std::cout << "squared distance: " << sqd << std::endl;
-    return EXIT_SUCCESS;
+    auto loader = new ModelLoader::Loader();
+    loader->Load("/home/ojabassini/Downloads/Male.obj");
+    auto triangles = loader->Triangles();
+    return 0;
 }
