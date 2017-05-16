@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.6)
 project(Vr)
 set(CMAKE_CXX_STANDARD 14)
+set(GCC_COVERAGE_COMPILE_FLAGS "-fPIC")
+add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
 set(SOURCE_FILES src/main.cpp include/ModelLoader/Loader.h src/ModelLoader/Loader.cpp include/Tree/ObbTree.h src/Tree/ObbTree.cpp)
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

@@ -16,7 +16,7 @@ namespace ModelLoader {
     private:
         vector<Triangle> _triangles;
     public:
-        auto Load( string filePath );
+        void Load( string filePath );
         vector<Triangle>& Triangles();
     };
 }

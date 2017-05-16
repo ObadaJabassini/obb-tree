@@ -9,7 +9,7 @@ using namespace std;
 
 namespace ModelLoader {
 
-    auto Loader::Load( std::string filePath ) {
+    void Loader::Load( std::string filePath ) {
         Assimp::Importer importer;
         const aiScene* scene = importer.ReadFile( filePath.c_str(),
                                                   aiProcess_CalcTangentSpace |
