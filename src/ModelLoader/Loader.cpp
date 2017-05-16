@@ -20,9 +20,9 @@ namespace ModelLoader {
             cout << "error!";
             throw exception();
         }
-        for ( int i = 0; i < scene->mNumMeshes; ++i ) {
+        for ( unsigned int i = 0; i < scene->mNumMeshes; ++i ) {
             auto mesh = scene->mMeshes[i];
-            for(int j = 0; j < mesh->mNumFaces;++j)
+            for( unsigned int j = 0; j < mesh->mNumFaces;++j)
             {
                 const aiFace& face = mesh->mFaces[j];
                 aiVector3D pos = mesh->mVertices[face.mIndices[0]];

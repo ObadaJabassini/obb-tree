@@ -1,6 +1,7 @@
 #include <Tree/ObbTree.h>
 #include <algorithm>
 #include <eigen3/Eigen/Dense>
+#include <math.h>
 
 using namespace CGAL;
 using namespace Eigen;
@@ -124,7 +125,8 @@ namespace Tree {
     }
 
     ObbTree::Node::~Node() {
-        delete left, right;
+        delete left;
+        delete right;
     }
 
     bool ObbTree::Node::intersect( OOBB& second ) {
