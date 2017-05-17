@@ -13,6 +13,7 @@
 using namespace ApproxMVBB;
 using namespace CGAL;
 using namespace std;
+
 typedef Simple_cartesian<double> K;
 typedef K::Triangle_3 Triangle;
 typedef K::Point_3 Point;
@@ -29,19 +30,19 @@ namespace Tree{
             Node(int leftIndex = 0, int rightIndex = 0, Node* left = nullptr, Node* right = nullptr, ObbTree* root = nullptr);
             void intersect(OOBB& tri, vector<int>& tris);
             bool intersect(OOBB& obb);
-            bool intersect(OOBB& first, OOBB& second, int caseNumber);
+            bool axisExists(OOBB& first, OOBB& second, int caseNumber);
             ~Node();
         };
-        vector<Triangle>& triangles;
+        vector<Triangle> triangles;
         Node* root;
         void create(Node*& node, int left, int right, ObbTree* tree);
-        void init(vector<Triangle>& tris);
-        vector<pair<Triangle, Triangle>> Intersect(Triangle& tri);
+        void init(vector<Triangle>& tris, bool isSorted);
+        void intersect(Triangle tri, vector<pair<Triangle, Triangle>>& tris);
     public:
         ObbTree(list<Point>& points);
-        ObbTree(vector<Triangle>& triangles);
+        ObbTree(vector<Triangle>& triangles, bool isSorted = false);
         vector<Triangle>& Triangles();
-        vector<pair<Triangle, Triangle>> Intersect(ObbTree* tree);
+        void Intersect(const vector<Triangle>& tris, vector<pair<Triangle, Triangle>>& result);
         ~ObbTree();
     };
 }

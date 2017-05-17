@@ -1,23 +1,24 @@
 #include <Tree/ObbTree.h>
-#include <algorithm>
+#include <parallel/algorithm>
 #include <eigen3/Eigen/Dense>
 #include <math.h>
+#include <iostream>
 
 using namespace CGAL;
 using namespace Eigen;
 using namespace std;
 
-
 #define min( x, y, z ) (x < y && x < z? x : y < x && y < z? y : z)
 #define abs( x ) (x >= 0 ? x : -x)
 
 namespace Tree {
-    ObbTree::ObbTree( vector<Triangle>& tris ) : triangles( tris ) {
-        init( tris );
+    ObbTree::ObbTree( vector<Triangle>& tris, bool isSorted ){
+        init( tris, isSorted );
     }
 
     void ObbTree::create( Node*& node, int left, int right, ObbTree* tree ) {
         int len = right - left;
+        cout << "Left = " << left << " Right = " << right << endl;
         node = new Node( left, right, nullptr, nullptr, tree );
         if ( len == 0 )
             return;
@@ -29,8 +30,7 @@ namespace Tree {
         return triangles;
     }
 
-    vector<pair<Triangle, Triangle>> ObbTree::Intersect( Triangle& tri ) {
-        vector<pair<Triangle, Triangle>> tris;
+    void ObbTree::intersect( Triangle tri, vector<pair<Triangle, Triangle>>& tris) {
         vector<int> indices;
         Matrix3Dyn points( 3, 3 );
         for ( int i = 0; i < 3; ++i ) {
@@ -44,20 +44,18 @@ namespace Tree {
         for ( auto& index : indices ) {
             tris.push_back( make_pair( tri, this->triangles[index] ));
         }
-        return tris;
     }
 
-    vector<pair<Triangle, Triangle>> ObbTree::Intersect( ObbTree* tree ) {
-        vector<pair<Triangle, Triangle>> result;
-        for ( auto& tri : this->triangles ) {
-            auto temp = tree->Intersect( tri );
+    void ObbTree::Intersect( const vector<Triangle>& tris, vector<pair<Triangle, Triangle>>& result) {
+        for ( auto& tri : tris ) {
+            vector<pair<Triangle, Triangle>> temp;
+            this->intersect( tri, temp);
             if ( temp.size() > 0 )
                 result.insert( result.end(), temp.begin(), temp.end());
         }
-        return result;
     }
 
-    ObbTree::ObbTree( list <Point>& points ) : triangles( *(new vector<Triangle>())) {
+    ObbTree::ObbTree( list <Point>& points ){
         Triangulation triangulation( points.begin(), points.end());
         vector<Triangle> tris;
         for ( auto it = triangulation.finite_facets_begin(); it != triangulation.finite_facets_end(); ++it ) {
@@ -66,42 +64,41 @@ namespace Tree {
                     p3 = it->first->vertex((it->second + 3) % 4 )->point();
             tris.push_back( Triangle( p1, p2, p3 ));
         }
-        init( tris );
+        init( tris, false );
     }
 
-    void ObbTree::init( vector<Triangle>& tris ) {
+    void ObbTree::init( vector<Triangle>& tris, bool isSorted ) {
         this->triangles = tris;
-        auto least = [ & ]( Triangle& tri ) -> int {
-            auto p1 = tri.vertex( 0 );
-            auto p2 = tri.vertex( 1 );
-            auto p3 = tri.vertex( 2 );
-            double minX = min( p1.x(), p2.x(), p3.x());
-            if ( minX == p1.x())
-                return 0;
-            else if ( minX == p2.x())
-                return 1;
-            return 2;
-        };
-        std::sort( triangles.begin(), triangles.end(), [ & ]( Triangle& first, Triangle& second ) -> auto {
-            int p1 = least( first ), p2 = least( second );
-            return first.vertex( p1 ).x() < second.vertex( p2 ).x();
-        } );
+        if ( !isSorted ) {
+            auto least = [ & ]( Triangle& tri ) -> int {
+                auto p1 = tri.vertex( 0 );
+                auto p2 = tri.vertex( 1 );
+                auto p3 = tri.vertex( 2 );
+                double minX = min( p1.x(), p2.x(), p3.x());
+                return minX == p1.x() ? 0 : minX == p2.x() ? 1 : 2;
+            };
+            sort(triangles.begin(), triangles.end(), [&](Triangle& first, Triangle& second) -> bool {
+                int p1 = least( first ), p2 = least( second );
+                return first.vertex( p1 ).x() < second.vertex( p2 ).x();
+            });
+        }
         create( this->root, 0, ( int ) (tris.size() - 1), this );
     }
 
     ObbTree::Node::Node( int leftIndex, int rightIndex, Node* left,
-                         Node* right, ObbTree* tree ) : root( tree ) {
+                         Node* right, ObbTree* tree ){
         this->leftIndex = leftIndex;
         this->rightIndex = rightIndex;
         this->left = left;
         this->right = right;
-        auto tris = root->Triangles();
+        this->root = tree;
+        vector<Triangle>& tris = root->Triangles();
         Matrix3Dyn points( 3, (rightIndex - leftIndex + 1) * 3 );
-        for ( int i = leftIndex; i <= rightIndex; ++i ) {
-            for ( int j = 0; j < 3; ++j ) {
+        for ( int i = leftIndex, col = 0; i <= rightIndex; ++i ) {
+            for ( int j = 0; j < 3; ++j, ++col ) {
                 auto p = tris[i].vertex( j );
                 for ( int k = 0; k < 3; ++k ) {
-                    points( k, i - leftIndex ) = k == 0 ? p.x() : k == 1 ? p.y() : p.z();
+                    points( k, col ) = k == 0 ? p.x() : k == 1 ? p.y() : p.z();
                 }
             }
         }
@@ -131,14 +128,14 @@ namespace Tree {
 
     bool ObbTree::Node::intersect( OOBB& second ) {
         for ( int i = 1; i <= 15; ++i ) {
-            if ( this->intersect( this->obb, second, i )) {
+            if ( this->axisExists( this->obb, second, i )) {
                 return false;
             }
         }
         return true;
     }
 
-    bool ObbTree::Node::intersect( OOBB& first, OOBB& second, int caseNumber ) {
+    bool ObbTree::Node::axisExists( OOBB& first, OOBB& second, int caseNumber ) {
         Vector3 pa = first.center(), pb = second.center();
         Vector3 ax = first.getDirection( 0 ),
                 ay = first.getDirection( 1 ),
@@ -222,11 +219,13 @@ namespace Tree {
                 return abs( t.dot( ay ) * ax.dot( bz ) - t.dot( ax ) * ay.dot( bz )) >
                        wa * abs( ay.dot( bz )) + ha * abs( ax.dot( bz )) + wb * abs( az.dot( by )) +
                        hb * abs( az.dot( bx ));
+            default:
+                return false;
         }
-        return false;
     }
 
     ObbTree::~ObbTree() {
         delete root;
     }
+
 }
