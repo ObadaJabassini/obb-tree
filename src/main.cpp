@@ -14,5 +14,6 @@ int main( int argc, char** argv ) {
     vector<pair<Triangle, Triangle>> result;
     tree->Intersect(tris, result);
     cout << result.size() << endl;
+    delete loader;
     return 0;
 }
