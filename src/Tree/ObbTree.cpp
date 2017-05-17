@@ -55,17 +55,17 @@ namespace Tree {
         }
     }
 
-    ObbTree::ObbTree( list <Point>& points ){
-        Triangulation triangulation( points.begin(), points.end());
-        vector<Triangle> tris;
-        for ( auto it = triangulation.finite_facets_begin(); it != triangulation.finite_facets_end(); ++it ) {
-            Point p1 = it->first->vertex((it->second + 1) % 4 )->point(),
-                    p2 = it->first->vertex((it->second + 2) % 4 )->point(),
-                    p3 = it->first->vertex((it->second + 3) % 4 )->point();
-            tris.push_back( Triangle( p1, p2, p3 ));
-        }
-        init( tris, false );
-    }
+//    ObbTree::ObbTree( list <Point>& points ){
+//        Triangulation triangulation( points.begin(), points.end());
+//        vector<Triangle> tris;
+//        for ( auto it = triangulation.finite_facets_begin(); it != triangulation.finite_facets_end(); ++it ) {
+//            Point p1 = it->first->vertex((it->second + 1) % 4 )->point(),
+//                    p2 = it->first->vertex((it->second + 2) % 4 )->point(),
+//                    p3 = it->first->vertex((it->second + 3) % 4 )->point();
+//            tris.push_back( Triangle( p1, p2, p3 ));
+//        }
+//        init( tris, false );
+//    }
 
     void ObbTree::init( vector<Triangle>& tris, bool isSorted ) {
         this->triangles = tris;

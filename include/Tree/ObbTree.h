@@ -39,7 +39,7 @@ namespace Tree{
         void init(vector<Triangle>& tris, bool isSorted);
         void intersect(Triangle tri, vector<pair<Triangle, Triangle>>& tris);
     public:
-        ObbTree(list<Point>& points);
+        //ObbTree(list<Point>& points);
         ObbTree(vector<Triangle>& triangles, bool isSorted = false);
         vector<Triangle>& Triangles();
         void Intersect(const vector<Triangle>& tris, vector<pair<Triangle, Triangle>>& result);
