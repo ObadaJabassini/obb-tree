@@ -9,6 +9,8 @@
 #include <vector>
 #include <list>
 #include <ApproxMVBB/ComputeApproxMVBB.hpp>
+#include <mutex>
+#include <ThirdParty/ThreadPool.h>
 
 using namespace ApproxMVBB;
 using namespace CGAL;
@@ -17,13 +19,17 @@ using namespace std;
 typedef Simple_cartesian<double> K;
 typedef K::Triangle_3 Triangle;
 typedef K::Point_3 Point;
-typedef Triangulation_3<K>      Triangulation;
+typedef Triangulation_3<K> Triangulation;
 
 namespace Tree{
     class ObbTree{
     private:
-        struct Node{
+        class Node{
+        public:
             int leftIndex, rightIndex;
+            static mutex l;
+            static ThreadPool pool;
+            static int leafLength;
             Node* left, *right;
             OOBB obb;
             ObbTree* root;
@@ -39,6 +45,7 @@ namespace Tree{
         void init(vector<Triangle>& tris, bool isSorted);
         void intersect(Triangle tri, vector<pair<Triangle, Triangle>>& tris);
     public:
+        static vector<future<bool>> futures;
         //ObbTree(list<Point>& points);
         ObbTree(vector<Triangle>& triangles, bool isSorted = false);
         vector<Triangle>& Triangles();

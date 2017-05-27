@@ -12,15 +12,19 @@ using namespace std;
 #define abs( x ) (x >= 0 ? x : -x)
 
 namespace Tree {
+    ThreadPool ObbTree::Node::pool(4);
+    mutex ObbTree::Node::l;
+    vector<future<bool>> ObbTree::futures;
+    int ObbTree::Node::leafLength = 10;
+
     ObbTree::ObbTree( vector<Triangle>& tris, bool isSorted ){
         init( tris, isSorted );
     }
 
     void ObbTree::create( Node*& node, int left, int right, ObbTree* tree ) {
         int len = right - left;
-        cout << "Left = " << left << " Right = " << right << endl;
         node = new Node( left, right, nullptr, nullptr, tree );
-        if ( len == 0 )
+        if ( len <= ObbTree::Node::leafLength - 1 )
             return;
         create( node->left, left, left + len / 2, tree );
         create( node->right, left + len / 2 + 1, left + len, tree );
@@ -55,18 +59,6 @@ namespace Tree {
         }
     }
 
-//    ObbTree::ObbTree( list <Point>& points ){
-//        Triangulation triangulation( points.begin(), points.end());
-//        vector<Triangle> tris;
-//        for ( auto it = triangulation.finite_facets_begin(); it != triangulation.finite_facets_end(); ++it ) {
-//            Point p1 = it->first->vertex((it->second + 1) % 4 )->point(),
-//                    p2 = it->first->vertex((it->second + 2) % 4 )->point(),
-//                    p3 = it->first->vertex((it->second + 3) % 4 )->point();
-//            tris.push_back( Triangle( p1, p2, p3 ));
-//        }
-//        init( tris, false );
-//    }
-
     void ObbTree::init( vector<Triangle>& tris, bool isSorted ) {
         this->triangles = tris;
         if ( !isSorted ) {
@@ -83,6 +75,9 @@ namespace Tree {
             });
         }
         create( this->root, 0, ( int ) (tris.size() - 1), this );
+        for(auto&& fu : futures){
+            fu.get();
+        }
     }
 
     ObbTree::Node::Node( int leftIndex, int rightIndex, Node* left,
@@ -93,21 +88,29 @@ namespace Tree {
         this->right = right;
         this->root = tree;
         vector<Triangle>& tris = root->Triangles();
-        Matrix3Dyn points( 3, (rightIndex - leftIndex + 1) * 3 );
-        for ( int i = leftIndex, col = 0; i <= rightIndex; ++i ) {
-            for ( int j = 0; j < 3; ++j, ++col ) {
-                auto p = tris[i].vertex( j );
-                for ( int k = 0; k < 3; ++k ) {
-                    points( k, col ) = k == 0 ? p.x() : k == 1 ? p.y() : p.z();
+        Node::l.lock();
+        futures.emplace_back(pool.enqueue([](int& leftIndex, int& rightIndex, vector<Triangle>& tris, OOBB& obb){
+            Matrix3Dyn points( 3, (rightIndex - leftIndex + 1) * 3 );
+            for ( int i = leftIndex, col = 0; i <= rightIndex; ++i ) {
+                for ( int j = 0; j < 3; ++j, ++col ) {
+                    auto p = tris[i].vertex( j );
+                    for ( int k = 0; k < 3; ++k ) {
+                        points( k, col ) = k == 0 ? p.x() : k == 1 ? p.y() : p.z();
+                    }
                 }
             }
-        }
-        this->obb = ApproxMVBB::approximateMVBB( points, 0.001 );
+            obb = ApproxMVBB::approximateMVBB( points, 0.001 );
+            cout << "Left = " << leftIndex << " , Right = " << rightIndex << endl;
+            return true;
+        }, leftIndex, rightIndex, tris, this->obb));
+        Node::l.unlock();
     }
 
     void ObbTree::Node::intersect( OOBB& tri, vector<int>& tris ) {
-        if ( rightIndex - leftIndex == 0 ) {
-            tris.push_back( leftIndex );
+        if ( rightIndex - leftIndex == ObbTree::Node::leafLength - 1 ) {
+            for ( int i = leftIndex; i <= rightIndex; ++i ) {
+                tris.push_back( i );
+            }
             return;
         }
         if ( !this->intersect( tri )) {
@@ -150,7 +153,7 @@ namespace Tree {
         by.normalize();
         bz.normalize();
         Vector3List firstCorners = first.getCornerPoints(),
-                secondCorners = second.getCornerPoints();
+                    secondCorners = second.getCornerPoints();
         double wa = (firstCorners.at( 0 ) - firstCorners.at( 1 )).norm() / 2,
                 ha = (firstCorners.at( 0 ) - firstCorners.at( 2 )).norm() / 2,
                 da = (firstCorners.at( 0 ) - firstCorners.at( 4 )).norm() / 2,

@@ -1,12 +1,13 @@
 cmake_minimum_required(VERSION 3.6)
 project(Vr)
 set(CMAKE_CXX_STANDARD 14)
-set(GCC_COVERAGE_COMPILE_FLAGS "-fPIC -fopenmp -lpthread")
-set(CMAKE_SHARED_LINKER_FLAGS "-fopenmp")
-set(LD_FLAGS "-fopenmp")
-set(CMAKE_EXE_LINKER_FLAGS "-fopenmp")
+set(GCC_COVERAGE_COMPILE_FLAGS "-fPIC -lpthread -lassimp")
+set(GCC_COVERAGE_COMPILE_FLAGS "-fPIC -fopenmp -lgomp -lpthread -lassimp")
+set(CMAKE_SHARED_LINKER_FLAGS "-fopenmp -lgomp -lassimp")
+set(LD_FLAGS "-fopenmp -lgomp -lassimp")
+set(CMAKE_EXE_LINKER_FLAGS "-fopenmp -lgomp -lassimp")
 add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
-set(SOURCE_FILES src/main.cpp include/ModelLoader/Loader.h src/ModelLoader/Loader.cpp include/Tree/ObbTree.h src/Tree/ObbTree.cpp)
+set(SOURCE_FILES src/main.cpp include/ModelLoader/Loader.h src/ModelLoader/Loader.cpp include/Tree/ObbTree.h src/Tree/ObbTree.cpp include/ThirdParty/ThreadPool.h)
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
@@ -68,13 +69,13 @@ else (WIN32)
     find_path(
             assimp_INCLUDE_DIRS
             NAMES postprocess.h scene.h version.h config.h cimport.h
-            PATHS /usr/local/include/
+            PATHS /usr/include/assimp
     )
 
     find_library(
             assimp_LIBRARIES
             NAMES assimp
-            PATHS /usr/local/lib/
+            PATHS /usr/lib64/
     )
 
     if (assimp_INCLUDE_DIRS AND assimp_LIBRARIES)
