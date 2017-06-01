@@ -8,10 +8,11 @@ using namespace CGAL;
 using namespace Eigen;
 using namespace std;
 
-#define min( x, y, z ) (x < y && x < z? x : y < x && y < z? y : z)
+#define min( x, y, z ) (x < y && x < z ? x : y < x && y < z ? y : z)
 #define abs( x ) (x >= 0 ? x : -x)
 
 namespace Tree {
+
     ThreadPool ObbTree::Node::pool(4);
     mutex ObbTree::Node::l;
     vector<future<bool>> ObbTree::futures;
@@ -43,7 +44,7 @@ namespace Tree {
                 points( i, j ) = j == 0 ? vert.x() : j == 1 ? vert.y() : vert.z();
             }
         }
-        OOBB oobb = ApproxMVBB::approximateMVBB( points, 0.001 );
+        auto oobb = ApproxMVBB::approximateMVBB( points, 0.001 );
         root->intersect( oobb, indices );
         for ( auto& index : indices ) {
             tris.push_back( make_pair( tri, this->triangles[index] ));
@@ -100,7 +101,6 @@ namespace Tree {
                 }
             }
             obb = ApproxMVBB::approximateMVBB( points, 0.001 );
-            cout << "Left = " << leftIndex << " , Right = " << rightIndex << endl;
             return true;
         }, leftIndex, rightIndex, tris, this->obb));
         Node::l.unlock();
@@ -154,7 +154,7 @@ namespace Tree {
         bz.normalize();
         Vector3List firstCorners = first.getCornerPoints(),
                     secondCorners = second.getCornerPoints();
-        double wa = (firstCorners.at( 0 ) - firstCorners.at( 1 )).norm() / 2,
+        double  wa = (firstCorners.at( 0 ) - firstCorners.at( 1 )).norm() / 2,
                 ha = (firstCorners.at( 0 ) - firstCorners.at( 2 )).norm() / 2,
                 da = (firstCorners.at( 0 ) - firstCorners.at( 4 )).norm() / 2,
                 wb = (secondCorners.at( 0 ) - secondCorners.at( 1 )).norm() / 2,
@@ -229,6 +229,14 @@ namespace Tree {
 
     ObbTree::~ObbTree() {
         delete root;
+    }
+
+    VectorXi ObbTree::range( int& from, int& to ) {
+        vector<int> vec;
+        for ( int i = from; i <= to; ++i ) {
+            vec.push_back(i);
+        }
+        return Eigen::VectorXi(vec);
     }
 
 }

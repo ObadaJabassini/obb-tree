@@ -6,6 +6,9 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Triangulation_3.h>
 #include <memory>
+#include <igl/slice.h>
+#include <eigen3/Eigen/StdVector>
+#include <eigen3/Eigen/Dense>
 #include <vector>
 #include <list>
 #include <ApproxMVBB/ComputeApproxMVBB.hpp>
@@ -15,6 +18,7 @@
 using namespace ApproxMVBB;
 using namespace CGAL;
 using namespace std;
+using namespace Eigen;
 
 typedef Simple_cartesian<double> K;
 typedef K::Triangle_3 Triangle;
@@ -40,10 +44,12 @@ namespace Tree{
             ~Node();
         };
         vector<Triangle> triangles;
+        shared_ptr<Matrix3Dyn> points;
         Node* root;
         void create(Node*& node, int left, int right, ObbTree* tree);
         void init(vector<Triangle>& tris, bool isSorted);
         void intersect(Triangle tri, vector<pair<Triangle, Triangle>>& tris);
+        static VectorXi range(int& from, int& to);
     public:
         static vector<future<bool>> futures;
         //ObbTree(list<Point>& points);
