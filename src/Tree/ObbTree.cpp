@@ -28,7 +28,7 @@ namespace Tree {
         if ( len <= ObbTree::Node::leafLength - 1 )
             return;
         create( node->left, left, left + len / 2, tree );
-        create( node->right, left + len / 2 + 1, left + len, tree );
+        create( node->right, left + len / 2 + 1, right, tree );
     }
 
     vector<Triangle>& ObbTree::Triangles() {
